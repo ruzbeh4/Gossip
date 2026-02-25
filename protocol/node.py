@@ -24,6 +24,7 @@ class Config:
     peer_limit: int
     ping_interval: float
     peer_timeout: float
+    peer_refresh_interval: float
     seed: int
     pull_interval: float
     ihave_max_ids: int
@@ -39,6 +40,7 @@ class Config:
             "peer_limit": self.peer_limit,
             "ping_interval": self.ping_interval,
             "peer_timeout": self.peer_timeout,
+            "peer_refresh_interval": self.peer_refresh_interval,
             "seed": self.seed,
             "pull_interval": self.pull_interval,
             "ihave_max_ids": self.ihave_max_ids,
@@ -160,6 +162,8 @@ class NodeRuntime:
             self.log(f"PoW ready nonce={self.local_pow['nonce']}")
 
         self.tasks.append(asyncio.create_task(peers.ping_loop(self), name="ping_loop"))
+        if self.config["peer_refresh_interval"] > 0:
+            self.tasks.append(asyncio.create_task(peers.peer_refresh_loop(self), name="peer_refresh_loop"))
         self.tasks.append(asyncio.create_task(self.user_input_loop(), name="input_loop"))
 
         if self.config["pull_interval"] > 0:
@@ -303,6 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--peer-limit", type=int, default=20)
     parser.add_argument("--ping-interval", type=float, default=30.0)
     parser.add_argument("--peer-timeout", type=float, default=15.0)
+    parser.add_argument("--peer-refresh-interval", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--pull-interval", type=float, default=0.0)
     parser.add_argument("--ihave-max-ids", type=int, default=32)
@@ -321,6 +326,7 @@ async def run(args: argparse.Namespace) -> None:
         peer_limit=max(1, args.peer_limit),
         ping_interval=max(0.2, args.ping_interval),
         peer_timeout=max(args.ping_interval, args.peer_timeout),
+        peer_refresh_interval=max(0.0, args.peer_refresh_interval),
         seed=args.seed,
         pull_interval=max(0.0, args.pull_interval),
         ihave_max_ids=max(1, args.ihave_max_ids),

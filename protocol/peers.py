@@ -158,3 +158,26 @@ async def ping_loop(runtime: "NodeRuntime") -> None:
             old_addr = runtime.peers[node_id]["addr"]
             del runtime.peers[node_id]
             runtime.log(f"Peer removed node_id={node_id} addr={old_addr} reason=timeout")
+
+
+async def peer_refresh_loop(runtime: "NodeRuntime") -> None:
+    while not runtime.stopped.is_set():
+        await asyncio.sleep(runtime.config["peer_refresh_interval"])
+        if not runtime.peers:
+            continue
+
+        peer_ids = list(runtime.peers.keys())
+        sample_size = min(runtime.config["fanout"], len(peer_ids))
+        if sample_size <= 0:
+            continue
+
+        selected = random.sample(peer_ids, sample_size)
+        for node_id in selected:
+            addr = runtime.peers[node_id]["addr"]
+            get_peers = messages.build_get_peers(
+                sender_id=runtime.node_id,
+                sender_addr=runtime.self_addr,
+                ttl=runtime.config["ttl"],
+                max_peers=runtime.config["peer_limit"],
+            )
+            await runtime.send_to_addr_str(addr, get_peers)
