@@ -303,7 +303,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--peer-limit", type=int, default=20)
     parser.add_argument("--ping-interval", type=float, default=30.0)
     parser.add_argument("--peer-timeout", type=float, default=15.0)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--pull-interval", type=float, default=0.0)
     parser.add_argument("--ihave-max-ids", type=int, default=32)
     parser.add_argument("--pow-k", type=int, default=0)
@@ -311,7 +311,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 async def run(args: argparse.Namespace) -> None:
-    random.seed(args.seed)
+    runtime_seed = args.seed if args.seed is not None else random.SystemRandom().randrange(0, 2**31)
+    random.seed(runtime_seed)
     config = Config(
         host=args.host,
         port=args.port,
@@ -321,12 +322,13 @@ async def run(args: argparse.Namespace) -> None:
         peer_limit=max(1, args.peer_limit),
         ping_interval=max(0.2, args.ping_interval),
         peer_timeout=max(args.ping_interval, args.peer_timeout),
-        seed=args.seed,
+        seed=runtime_seed,
         pull_interval=max(0.0, args.pull_interval),
         ihave_max_ids=max(1, args.ihave_max_ids),
         pow_k=max(0, args.pow_k),
     )
     runtime = NodeRuntime(config)
+    runtime.log(f"Runtime random seed={runtime_seed}")
 
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):

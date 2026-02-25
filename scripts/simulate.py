@@ -74,12 +74,12 @@ def _start_node(
 
 
 def _send_line(proc: subprocess.Popen, line: str) -> None:
-    if proc.stdin is None:
+    if proc.stdin is None or proc.poll() is not None:
         return
     try:
         proc.stdin.write(line + "\n")
         proc.stdin.flush()
-    except BrokenPipeError:
+    except (BrokenPipeError, OSError, ValueError):
         return
 
 
