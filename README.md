@@ -14,7 +14,6 @@ This repository currently includes:
 - UDP-based JSON message transport (`asyncio.DatagramProtocol`)
 - Bootstrap flow: `HELLO -> GET_PEERS -> PEERS_LIST`
 - Peer management with periodic `PING/PONG` and timeout removal
-- Optional periodic peer discovery refresh via `GET_PEERS`
 - Push gossip with:
   - `msg_id` seen-set duplicate suppression
   - TTL decrement + bounded random fanout forwarding
@@ -158,7 +157,6 @@ Supported flags in `protocol/node.py`:
 - `--peer-limit`
 - `--ping-interval`
 - `--peer-timeout`
-- `--peer-refresh-interval`
 - `--seed`
 - `--pull-interval`
 - `--ihave-max-ids`
@@ -199,11 +197,6 @@ Supported flags in `protocol/node.py`:
   - Remove peer if not seen for this many seconds.
   - Should be greater than `--ping-interval`.
   - Default: `15.0`
-
-- `--peer-refresh-interval`
-  - Periodic interval (seconds) to request fresh peers from random neighbors.
-  - Set to `0` to disable.
-  - Default: `0.0`
 
 - `--seed`
   - Random seed for reproducible peer sampling/fanout choices.
@@ -259,12 +252,6 @@ python -m scripts.simulate --sizes 10,20,50 --runs 5 --mode both \
 ```
 
 Logs are written under `scripts/out/<timestamp>/mode_<mode>/N<...>_seed<...>/` with one log per node.
-
-For larger N, consider enabling periodic peer refresh to improve connectivity:
-
-```bash
-python -m scripts.simulate --sizes 10,20,50 --runs 5 --mode both --peer-refresh-interval 6
-```
 
 ### Analysis
 

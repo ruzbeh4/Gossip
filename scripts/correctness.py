@@ -27,7 +27,6 @@ def run_check(args: argparse.Namespace) -> int:
             peer_limit=args.peer_limit,
             ping_interval=args.ping_interval,
             peer_timeout=args.peer_timeout,
-            peer_refresh_interval=args.peer_refresh_interval,
             seed=args.seed_start + i,
             pull_interval=0.0,
             ihave_max_ids=args.ihave_max_ids,
@@ -73,7 +72,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--peer-limit", type=int, default=20)
     parser.add_argument("--ping-interval", type=float, default=5.0)
     parser.add_argument("--peer-timeout", type=float, default=15.0)
-    parser.add_argument("--peer-refresh-interval", type=float, default=0.0)
     parser.add_argument("--ihave-max-ids", type=int, default=32)
     parser.add_argument("--pow-k", type=int, default=0)
     parser.add_argument("--seed-start", type=int, default=200)
