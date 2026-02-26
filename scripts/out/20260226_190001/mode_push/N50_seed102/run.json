@@ -1,0 +1,20 @@
+{
+  "mode": "push",
+  "size": 50,
+  "seed_base": 102,
+  "fanout": 5,
+  "ttl": 18,
+  "peer_limit": 50,
+  "ping_interval": 5.0,
+  "peer_timeout": 15.0,
+  "pull_interval": 0.0,
+  "ihave_max_ids": 32,
+  "pow_k": 0,
+  "base_port": 9000,
+  "host": "127.0.0.1",
+  "topic": "news",
+  "data": "hello",
+  "startup_wait": 8.0,
+  "gossip_wait": 14.0,
+  "timestamp": 1772120121129
+}

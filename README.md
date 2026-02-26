@@ -47,6 +47,7 @@ gossip_project/
 ├── scripts/
 │   ├── simulate.py
 │   ├── analyze.py
+│   ├── pow_bench.py
 │   └── correctness.py
 ├── requirements.txt
 └── README.md
@@ -146,74 +147,69 @@ Plain text input is ignored; use `gossip <topic> <text>` to publish.
   - Enter `/` to toggle modes quickly.
   - When switching from `command` to `logs`, buffered logs are flushed.
 
-## Required CLI Parameters
-
-Supported flags in `protocol/node.py`:
-
-- `--port`
-- `--bootstrap` (`ip:port`)
-- `--fanout`
-- `--ttl`
-- `--peer-limit`
-- `--ping-interval`
-- `--peer-timeout`
-- `--seed`
-- `--pull-interval`
-- `--ihave-max-ids`
-- `--pow-k`
 
 ## CLI Flag Guide
 
+Supported flags in `protocol/node.py`:
+
 - `--host`
   - Local bind IP address.
-  - Default: `127.0.0.1`
+  - Default: `127.0.0.1`.
 
 - `--port` (required)
   - Local UDP port for this node.
+  - must be unique per node on the same machine.
 
 - `--bootstrap`
   - Seed node address in `ip:port` format used for discovery.
-  - Default: not set (standalone node)
+  - Default: not set (standalone node).
+  - use `127.0.0.1:<port>` for localhost runs.
 
 - `--fanout`
   - Number of random peers selected per gossip forward.
-  - Default: `3`
+  - Default: `3`.
+  - higher values increase coverage and overhead.
 
 - `--ttl`
   - Hop limit for each gossip message.
-  - Forwarding stops when TTL reaches `0`.
-  - Default: `8`
+  - Default: `8`.
+  - forwarding stops when TTL reaches `0`.
 
 - `--peer-limit`
   - Max number of peers kept in peer table.
-  - Default: `20`
+  - Default: `20`.
+  - lower values can reduce connectivity.
 
 - `--ping-interval`
   - Heartbeat period (seconds) for sending `PING`.
-  - This is where ping/pong frequency is configured.
-  - Default: `5.0`
+  - Default: `5.0`.
+  - shorter intervals increase control traffic.
 
 - `--peer-timeout`
   - Remove peer if not seen for this many seconds.
-  - Should be greater than `--ping-interval`.
-  - Default: `15.0`
+  - Default: `15.0`.
+  - should be greater than `--ping-interval`.
 
 - `--seed`
-  - Random seed for reproducible peer sampling/fanout choices.
-  - Default: `42`
+  - Random seed for reproducible peer sampling and fanout choices.
+  - Default: `42`.
+  - change this to vary runs in analysis.
 
 - `--pull-interval`
   - Enable hybrid push-pull when `> 0`.
   - Interval (seconds) between `IHAVE` broadcasts.
-  - Default: `0.0` (disabled)
+  - Default: `0.0` (disabled).
+  - only applies when running hybrid mode.
 
 - `--ihave-max-ids`
   - Maximum IDs advertised in each `IHAVE`.
-  - Default: `32`
+  - Default: `32`.
+  - caps control-message size.
 
 - `--pow-k`
   - PoW difficulty for HELLO admission (`k` leading zeros in digest).
-  - Default: `0` (disabled)
+  - Default: `0` (disabled).
+  - higher values slow node join.
 
 ### Recommended 2-Node Manual Test Settings
 
@@ -246,34 +242,119 @@ RECV msg_type=GOSSIP msg_id=<...> first_seen=<true|false> node_id=<...> recv_ms=
 Run the required simulations for $N \in \{10,20,50\}$ with 5 seeds, in both push and hybrid modes:
 
 ```bash
-python -m scripts.simulate --sizes 10,20,50 --runs 5 --mode both \
-	--fanout 3 --ttl 8 --peer-limit 20 --ping-interval 5 --peer-timeout 15 \
-	--pull-interval 2 --ihave-max-ids 32
+python -m scripts.simulate --sizes 10,20,50 --runs 5 --mode both --fanout 3 --ttl 8 --peer-limit 20 --ping-interval 5 --peer-timeout 15 --pull-interval 2 --ihave-max-ids 32
 ```
 
 Logs are written under `scripts/out/<timestamp>/mode_<mode>/N<...>_seed<...>/` with one log per node.
+
+Simulation options:
+
+- `--sizes`
+  - Comma-separated N values.
+  - Default: `10,20,50`.
+  - use at least three sizes for the report.
+- `--runs`
+  - Number of seeds per N.
+  - Default: `5`.
+  - must be at least 5 for the requirement.
+- `--mode`
+  - `push`, `hybrid`, or `both`.
+  - Default: `both`.
+  - run both modes to compare overhead and convergence.
+- `--base-port`
+  - First UDP port; nodes use sequential ports.
+  - Default: `9000`.
+  - avoid port conflicts with other runs.
+- `--seed-start`
+  - Base seed for each run.
+  - Default: `100`.
+  - change to vary experiment batches.
+- `--startup-wait`
+  - Seconds to wait before sending gossip.
+  - Default: `2.0`.
+  - increase for larger N to finish bootstrapping.
+- `--gossip-wait`
+  - Seconds to wait for propagation.
+  - Default: `8.0`.
+  - increase for larger N to reach 95% coverage.
+- `--shutdown-wait`
+  - Seconds to wait for clean shutdown.
+  - Default: `2.0`.
+  - keep small to avoid long test times.
+- `--topic`
+  - Gossip topic string.
+  - Default: `news`.
+- `--data`
+  - Gossip payload string.
+  - Default: `hello`.
+- `--out-dir`
+  - Root output folder.
+  - Default: `scripts/out`.
+  - each run creates a timestamped subfolder.
+- `--python`
+  - Python executable (defaults to env `PYTHON` or `python`).
+  - Default: `python`.
+
+Shared node flags used by simulation are documented in the CLI Flag Guide: `--host`, `--fanout`, `--ttl`, `--peer-limit`, `--ping-interval`, `--peer-timeout`, `--pull-interval`, `--ihave-max-ids`, `--pow-k`.
 
 ### Analysis
 
 Parse logs, compute convergence time and message overhead, and write CSV/JSON summary:
 
 ```bash
-python -m scripts.analyze --input scripts/out --output scripts/results
+python -m scripts.analyze --input scripts/out/<timestamp>
 ```
 
 To also generate plots (requires `matplotlib`):
 
 ```bash
-python -m scripts.analyze --input scripts/out --output scripts/results --plot
+python -m scripts.analyze --input scripts/out/<timestamp> --plot
 ```
 
 Outputs:
 
-- `scripts/results/runs.csv`
-- `scripts/results/summary.csv`
-- `scripts/results/summary.json`
-- `scripts/results/convergence.png` (optional)
-- `scripts/results/overhead.png` (optional)
+- `scripts/out/<timestamp>/out/runs.csv`
+- `scripts/out/<timestamp>/out/summary.csv`
+- `scripts/out/<timestamp>/out/summary.json`
+- `scripts/out/<timestamp>/out/convergence.png` (optional)
+- `scripts/out/<timestamp>/out/overhead.png` (optional)
+
+Analysis options:
+
+- `--input`
+  - Required input folder containing run logs.
+  - pass a single run folder (timestamp) for clean results.
+- `--output`
+  - Optional output folder.
+  - Default: `<input>/out`.
+- `--plot`
+  - Enable PNG plot generation.
+
+### PoW Timing
+
+Benchmark PoW mining time for a few `pow_k` values and generate a CSV (and optional plot):
+
+```bash
+python -m scripts.pow_bench --pow-ks 2,3,4 --runs 5 --plot
+```
+
+Outputs are written under `scripts/pow/<timestamp>/`.
+
+PoW timing options:
+
+- `--pow-ks`
+  - Comma-separated difficulty values.
+  - Default: `2,3,4`.
+  - pick 2 or 3 values for the report.
+- `--runs`
+  - Samples per difficulty.
+  - Default: `5`.
+  - increase for more stable averages.
+- `--out-dir`
+  - Root output folder.
+  - Default: `scripts/pow`.
+- `--plot`
+  - Enable PNG plot generation.
 
 ### Correctness Check
 
@@ -282,6 +363,48 @@ Run a 10-node local network and verify at least 90% coverage from a single gossi
 ```bash
 python -m scripts.correctness --size 10 --min-coverage 0.9
 ```
+
+Correctness options:
+
+- `--size`
+  - Number of nodes.
+  - Default: `10`.
+  - set to 10 to match the requirement.
+- `--min-coverage`
+  - Required coverage ratio (0-1).
+  - Default: `0.9`.
+- `--base-port`
+  - First UDP port; nodes use sequential ports.
+  - Default: `9100`.
+  - avoid port conflicts with simulation runs.
+- `--seed-start`
+  - Base seed for nodes.
+  - Default: `200`.
+- `--startup-wait`
+  - Seconds to wait before sending gossip.
+  - Default: `2.0`.
+  - increase if bootstrapping is slow.
+- `--gossip-wait`
+  - Seconds to wait for propagation.
+  - Default: `8.0`.
+  - increase if coverage is below 0.9.
+- `--shutdown-wait`
+  - Seconds to wait for clean shutdown.
+  - Default: `2.0`.
+- `--topic`
+  - Gossip topic string.
+  - Default: `news`.
+- `--data`
+  - Gossip payload string.
+  - Default: `hello`.
+- `--out-dir`
+  - Root output folder.
+  - Default: `scripts/correctness`.
+- `--python`
+  - Python executable.
+  - Default: `python`.
+
+Shared node flags used by correctness are documented in the CLI Flag Guide: `--host`, `--fanout`, `--ttl`, `--peer-limit`, `--ping-interval`, `--peer-timeout`, `--ihave-max-ids`, `--pow-k`.
 
 ## Run Tests
 

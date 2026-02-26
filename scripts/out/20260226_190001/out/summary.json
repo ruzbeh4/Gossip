@@ -1,0 +1,73 @@
+{
+  "summary": [
+    {
+      "mode": "hybrid",
+      "size": 10,
+      "runs": 5,
+      "convergence_mean": 6.8,
+      "convergence_std": 5.1536394906900505,
+      "overhead_mean": 44.4,
+      "overhead_std": 3.7202150475476548,
+      "coverage_mean": 1.0
+    },
+    {
+      "mode": "hybrid",
+      "size": 20,
+      "runs": 5,
+      "convergence_mean": 5.8,
+      "convergence_std": 0.7483314773547883,
+      "overhead_mean": 101.8,
+      "overhead_std": 6.997142273814361,
+      "coverage_mean": 1.0
+    },
+    {
+      "mode": "hybrid",
+      "size": 50,
+      "runs": 5,
+      "convergence_mean": 9.2,
+      "convergence_std": 0.7483314773547883,
+      "overhead_mean": 242.4,
+      "overhead_std": 12.815615474880635,
+      "coverage_mean": 1.0
+    },
+    {
+      "mode": "push",
+      "size": 10,
+      "runs": 5,
+      "convergence_mean": 3.2,
+      "convergence_std": 1.3266499161421599,
+      "overhead_mean": 47,
+      "overhead_std": 4.0,
+      "coverage_mean": 1.0
+    },
+    {
+      "mode": "push",
+      "size": 20,
+      "runs": 5,
+      "convergence_mean": 5.8,
+      "convergence_std": 0.4,
+      "overhead_mean": 92.2,
+      "overhead_std": 7.756287771866126,
+      "coverage_mean": 1.0
+    },
+    {
+      "mode": "push",
+      "size": 50,
+      "runs": 5,
+      "convergence_mean": 8.2,
+      "convergence_std": 0.4,
+      "overhead_mean": 238.8,
+      "overhead_std": 6.20966987850401,
+      "coverage_mean": 1.0
+    }
+  ],
+  "modes": [
+    "hybrid",
+    "push"
+  ],
+  "sizes": [
+    10,
+    20,
+    50
+  ]
+}

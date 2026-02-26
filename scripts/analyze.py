@@ -221,7 +221,7 @@ def _plot(summary_rows: list[dict], out_dir: Path) -> None:
 
 def run_analysis(args: argparse.Namespace) -> None:
     in_root = Path(args.input)
-    out_dir = Path(args.output)
+    out_dir = Path(args.output) if args.output else in_root / "out"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     run_files = _load_runs(in_root)
@@ -251,8 +251,8 @@ def run_analysis(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Analyze gossip simulation logs")
-    parser.add_argument("--input", default=str(Path("scripts") / "out"))
-    parser.add_argument("--output", default=str(Path("scripts") / "results"))
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", default=None)
     parser.add_argument("--plot", action="store_true")
     return parser
 
